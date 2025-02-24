@@ -1,0 +1,15 @@
+{
+    "tabWidth": 4,
+    "useTabs": false,
+    "endOfLine": "lf",
+    "printWidth": 100,
+    "trailingComma": "none",
+    "overrides": [
+        {
+            "files": "*.java",
+            "options": {
+                "parser": "java"
+            }
+        }
+    ]
+}

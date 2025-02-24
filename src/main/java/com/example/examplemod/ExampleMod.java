@@ -5,6 +5,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.logging.LogUtils;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -37,14 +38,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-
-import java.util.List;
-
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(ExampleMod.MODID)
 public class ExampleMod {
+
     // Define mod id in a common place for everything to reference
     public static final String MODID = "mythic_chase";
     // Directly reference a slf4j logger
@@ -68,39 +67,53 @@ public class ExampleMod {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
         // 게임 시작 명령어
-        dispatcher.register(Commands.literal("start_hunt")
+        dispatcher.register(
+            Commands.literal("start_hunt")
                 .requires(source -> source.hasPermission(0))
                 .executes(context -> {
                     startHuntGame(context.getSource());
                     return Command.SINGLE_SUCCESS;
-                }));
+                })
+        );
 
         // 게임 라운드 시간 설정 명령어
-        dispatcher.register(Commands.literal("set_hunt_time")
+        dispatcher.register(
+            Commands.literal("set_hunt_time")
                 .requires(source -> source.hasPermission(0))
-                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 300))
-                        .executes(context -> {
+                .then(
+                    Commands.argument("seconds", IntegerArgumentType.integer(1, 300)).executes(
+                        context -> {
                             int seconds = IntegerArgumentType.getInteger(context, "seconds");
                             GameManager.setGameDuration(seconds);
-                            context.getSource().sendSystemMessage(Component.literal("라운드 당 초를 "+String.valueOf(seconds)+"초로 설정"));
+                            context
+                                .getSource()
+                                .sendSystemMessage(
+                                    Component.literal(
+                                        "라운드 당 초를 " + String.valueOf(seconds) + "초로 설정"
+                                    )
+                                );
                             return Command.SINGLE_SUCCESS;
-                        })));
+                        }
+                    )
+                )
+        );
 
         // 게임 종료 명령어
-        dispatcher.register(Commands.literal("end_hunt")
+        dispatcher.register(
+            Commands.literal("end_hunt")
                 .requires(source -> source.hasPermission(0))
                 .executes(context -> {
-                    GameManager.endGame("게임을 강제종료했습니다.");;
+                    GameManager.endGame("게임을 강제종료했습니다.");
                     return Command.SINGLE_SUCCESS;
-                }));
+                })
+        );
     }
-    
 
     // 게임 시작
     private void startHuntGame(CommandSourceStack source) {
-        GameManager.startGame(source.getServer().getPlayerList().getPlayers(),source.getServer());
+        GameManager.startGame(source.getServer().getPlayerList().getPlayers(), source.getServer());
     }
-    
+
     @SubscribeEvent
     public void onPlayerKill(LivingDeathEvent event) {
         // 플레이어가 죽었을 때
@@ -115,9 +128,7 @@ public class ExampleMod {
         if (killer.equals(hunter)) { // 술래가 플레이어를 잡았을 경우
             GameManager.catchSurvivor(killer, victim);
         }
-
     }
-
 
     // 서버 시작시 호출
     @SubscribeEvent
@@ -132,8 +143,13 @@ public class ExampleMod {
     }
 
     // Common Setup
-    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    @Mod.EventBusSubscriber(
+        modid = MODID,
+        bus = Mod.EventBusSubscriber.Bus.MOD,
+        value = Dist.CLIENT
+    )
     public static class ClientModEvents {
+
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             // Some client setup code

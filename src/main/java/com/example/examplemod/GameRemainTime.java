@@ -11,6 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber
 public class GameRemainTime {
+
     private static int remainingTicks = -1; // 남은 시간 (틱 단위)
     private static MinecraftServer serverInstance;
 
@@ -28,7 +29,10 @@ public class GameRemainTime {
             if (remainingTicks % 20 == 0) { // 1초마다 갱신
                 int minutes = (remainingTicks / 20) / 60;
                 int seconds = (remainingTicks / 20) % 60;
-                sendActionBarToAll(serverInstance, "§e남은시간: §f" + minutes + "분 " + seconds + "초");
+                sendActionBarToAll(
+                    serverInstance,
+                    "§e남은시간: §f" + minutes + "분 " + seconds + "초"
+                );
             }
 
             remainingTicks--;
