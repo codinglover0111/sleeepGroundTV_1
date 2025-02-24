@@ -1,7 +1,9 @@
 package com.example.examplemod;
 
+import com.google.common.eventbus.Subscribe;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
@@ -65,40 +67,55 @@ public class ExampleMod {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
+        // 게임 시작 명령어
         dispatcher.register(Commands.literal("start_hunt")
-            .requires(source -> source.hasPermission(0))
-            .executes(context -> {
-                startHuntGame(context.getSource());
-                return Command.SINGLE_SUCCESS;
-            })
-        );
+                .requires(source -> source.hasPermission(0))
+                .executes(context -> {
+                    startHuntGame(context.getSource());
+                    return Command.SINGLE_SUCCESS;
+                }));
+
+        // 게임 라운드 시간 설정 명령어
+        dispatcher.register(Commands.literal("set_hunt_time")
+                .requires(source -> source.hasPermission(0))
+                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 300))
+                        .executes(context -> {
+                            int seconds = IntegerArgumentType.getInteger(context, "seconds");
+                            GameManager.setGameDuration(seconds);
+                            context.getSource().sendSystemMessage(Component.literal("라운드 당 초를 "+String.valueOf(seconds)+"초로 설정"));
+                            return Command.SINGLE_SUCCESS;
+                        })));
+
+        // 게임 종료 명령어
+        dispatcher.register(Commands.literal("end_hunt")
+                .requires(source -> source.hasPermission(0))
+                .executes(context -> {
+                    GameManager.endGame("게임을 강제종료했습니다.");;
+                    return Command.SINGLE_SUCCESS;
+                }));
     }
+    
 
     // 게임 시작
     private void startHuntGame(CommandSourceStack source) {
-        GameManager.startGame(source.getServer().getPlayerList().getPlayers());
+        GameManager.startGame(source.getServer().getPlayerList().getPlayers(),source.getServer());
     }
     
-    @SuppressWarnings("null")
     @SubscribeEvent
     public void onPlayerKill(LivingDeathEvent event) {
+        // 플레이어가 죽었을 때
         if (!(event.getSource().getEntity() instanceof ServerPlayer killer)) {
             return;
         }
+
         if (!(event.getEntity() instanceof ServerPlayer victim)) {
             return;
         }
 
         if (killer.equals(hunter)) { // 술래가 플레이어를 잡았을 경우
-            killer.getServer().getPlayerList().broadcastSystemMessage(Component.literal(
-                    "술래 " + killer.getName().getString() + " 가 " + victim.getName().getString() + " 을(를) 잡았습니다!"),
-                    false);
-        if (GameManager.survivors.size() == 1){
-                 // 마지막 생존자를 잡았을 경우
-                GameManager.endGame("술래가 모든 생존자를 잡았습니다! "+ killer.getName().getString() + " 승리!");
-            }
+            GameManager.catchSurvivor(killer, victim);
         }
-        
+
     }
 
 
